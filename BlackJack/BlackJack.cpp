@@ -56,6 +56,7 @@ public:
     {
         return m_znach;
     }
+    friend ostream& operator<<(ostream& os, const Card& aCard);
 };
 
 class Hand
@@ -77,7 +78,7 @@ public:
         }
         cardInHand.clear();
     }
-    int GetValue()
+    int GetValue()const
     {
         int value = 0;
         for (int i = 0; i < cardInHand.size(); ++i)
@@ -110,8 +111,12 @@ public:
     GenericPlayer(const string& name=" ") :Hand(), m_name(name)
     {
     }
+    string GetName() const
+    {
+        return m_name;
+    }
     virtual ~GenericPlayer() {}
-    virtual bool isHitting() = 0
+    virtual bool isHitting() const = 0
     {
 
     }
@@ -124,10 +129,84 @@ public:
         cout << m_name << ": " << "Bust" << endl;
     }
 };
+class Player : public GenericPlayer
+{
+    Hand m_hand;
+public:
+    Player(const string& name = "Player") : GenericPlayer(name)
+    {}
+    virtual bool isHitting() const override
+    {
+        int i = 0;
+        cout << "Do you need a card? 1-no\\2-yes" << endl;
+        cin >> i;
+        if(i!=1 & i != 2)
+        {
+            while (true)
+            {
+                cout << "Enter again !\n";
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cin.sync();
+                cout << "Do you need a card? y\\n" << endl;
+                cin >> i;
+                if (i==1 || i==2)
+                {
+                    break;
+                }
+            }
+        }
+        return i==1 ? false : true;
+    }
+    void Win() const
+    {
+        
+        cout << GetName() << ": You Win!" << endl;
+    }
+    void Lose() const
+    {
+        cout << GetName() << ": You Lose!" << endl;
+    }
+    void Push() const
+    {
+        cout << GetName() << ": draw!" << endl;
+    }
+};
+class House : public GenericPlayer
+{
+public:
+    House() :GenericPlayer("Diller")
+    {
+    }
+    virtual bool IsHitting()
+    {
+        return (GetValue() <= 16);
+    }
+    void FlipFirstCard()
+    {
+        
 
+    }
+};
+ostream& operator<<(ostream& os, const Card& aCard)
+{
+    const string RANKS[] = { "0", "A", "2", "3", "4", "5", "6", "7", "8", "9","10", "J", "Q", "K" };
+    const string SUITS[] = { "c", "d", "h", "s" };
+
+    if (aCard.m_openCard)
+    {
+        os << RANKS[aCard.m_znach] << SUITS[aCard.m_mast];
+    }
+    else
+    {
+        os << "XX";
+    }
+
+    return os;
+}
 
 int main()
 {
-   
+    
 }
 
