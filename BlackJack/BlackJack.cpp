@@ -73,6 +73,7 @@ public:
     }
     int GetValue()const
     {
+        
         int value = 0;
         for (int i = 0; i < cardInHand.size(); ++i)
         {
@@ -104,6 +105,7 @@ public:
     GenericPlayer(const string& name = " ") :Hand(), m_name(name)
     {
     }
+    friend ostream& operator<<(ostream& os, const GenericPlayer& player);
     string GetName() const
     {
         return m_name;
@@ -168,6 +170,7 @@ public:
 class House : public GenericPlayer
 {
 public:
+     
     House() :GenericPlayer("Diller")
     {
     }
@@ -203,10 +206,20 @@ ostream& operator<<(ostream& os, const Card& aCard)
 
     return os;
 }
-
+ostream& operator<<(ostream& os, const GenericPlayer& player) 
+{
+    os << player.GetName() << ": ";
+    for (int i = 0; i < player.cardInHand.size(); ++i)
+    {
+        os << player.cardInHand[i] << " ";
+    }
+        
+    os << "Score = " << player.GetValue() <<  endl;
+    return os;
+}
 int main()
 {
-
+   
 
     return 0;
 }
