@@ -7,16 +7,17 @@
 
 using namespace std;
 
-enum Mast
+enum Suits
 {
     Spades,
     Hearts,
     Clubs,
     Diamonds
 };
-enum Znach
+enum Ranks
 {
-    Two = 2,
+    Ace,
+    Two,
     Three,
     Four,
     Five,
@@ -26,44 +27,36 @@ enum Znach
     Nine,
     Ten,
     Jack = 10,
-    Queen = 10,
-    King = 10,
-    Ace = 1
+    Queen = 11,
+    King = 12,
+
 };
 class Card
 {
-    Mast m_mast;
-    Znach m_znach;
+    Suits m_suits;
+    Ranks m_ranks;
     bool m_openCard;
-
 public:
-
-    Card(Mast mast, Znach znac, bool openCard)
-        : m_mast(mast), m_znach(znac), m_openCard(openCard)
-    {
-        m_mast = mast;
-        m_znach = znac;
-        m_openCard = openCard;
-    }
-    void Flip()
-    {
-        if (m_openCard == true)
-            m_openCard = false;
-        else
-            m_openCard = true;
-    }
+    Card(Suits mast, Ranks znac, bool openCard)
+        : m_suits(mast), m_ranks(znac), m_openCard(openCard) {}
+    void Flip() { m_openCard = !m_openCard; }
     int GetValue()
     {
-        return m_znach;
+        if (m_ranks > 10)
+        {
+            return 10;
+        }
+        else
+            return m_ranks;
     }
     friend ostream& operator<<(ostream& os, const Card& aCard);
 };
 
 class Hand
 {
-    vector<Card*> cardInHand;
-public:
 
+public:
+    vector<Card*> cardInHand;
     void Add(Card* newCart)
     {
         cardInHand.push_back(newCart);
@@ -108,7 +101,7 @@ class GenericPlayer : public Hand
 {
     string m_name;
 public:
-    GenericPlayer(const string& name=" ") :Hand(), m_name(name)
+    GenericPlayer(const string& name = " ") :Hand(), m_name(name)
     {
     }
     string GetName() const
@@ -120,7 +113,7 @@ public:
     {
 
     }
-    bool isBoosted() 
+    bool isBoosted()
     {
         return (GetValue() > 21);
     }
@@ -140,7 +133,7 @@ public:
         int i = 0;
         cout << "Do you need a card? 1-no\\2-yes" << endl;
         cin >> i;
-        if(i!=1 & i != 2)
+        if ((i != 1) & (i != 2))
         {
             while (true)
             {
@@ -150,17 +143,17 @@ public:
                 cin.sync();
                 cout << "Do you need a card? y\\n" << endl;
                 cin >> i;
-                if (i==1 || i==2)
+                if (i == 1 || i == 2)
                 {
                     break;
                 }
             }
         }
-        return i==1 ? false : true;
+        return i == 1 ? false : true;
     }
     void Win() const
     {
-        
+
         cout << GetName() << ": You Win!" << endl;
     }
     void Lose() const
@@ -184,18 +177,24 @@ public:
     }
     void FlipFirstCard()
     {
-        
-
+        if (!cardInHand.empty())
+        {
+            cardInHand[0]->Flip();
+        }
+        else
+        {
+            cout << "No card to flip!" << endl;
+        }
     }
 };
 ostream& operator<<(ostream& os, const Card& aCard)
 {
-    const string RANKS[] = { "0", "A", "2", "3", "4", "5", "6", "7", "8", "9","10", "J", "Q", "K" };
-    const string SUITS[] = { "c", "d", "h", "s" };
+    const string RANKS[] = { "A", "2", "3", "4", "5", "6", "7", "8", "9","10", "J", "Q", "K" };
+    const string SUITS[] = { "s","h", "c", "d" };
 
     if (aCard.m_openCard)
     {
-        os << RANKS[aCard.m_znach] << SUITS[aCard.m_mast];
+        os << RANKS[aCard.m_ranks] << SUITS[aCard.m_suits];
     }
     else
     {
@@ -207,6 +206,8 @@ ostream& operator<<(ostream& os, const Card& aCard)
 
 int main()
 {
-    
+
+
+    return 0;
 }
 
