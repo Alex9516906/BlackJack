@@ -4,6 +4,7 @@
 #include <set>
 #include <cassert>
 #include <iterator>
+#include <algorithm>
 
 using namespace std;
 
@@ -16,7 +17,7 @@ enum Suits
 };
 enum Ranks
 {
-    Ace,
+    Ace=1,
     Two,
     Three,
     Four,
@@ -26,9 +27,9 @@ enum Ranks
     Eight,
     Nine,
     Ten,
-    Jack = 10,
-    Queen = 11,
-    King = 12,
+    Jack,
+    Queen,
+    King,
 
 };
 class Card
@@ -40,57 +41,69 @@ public:
     Card(Suits mast, Ranks znac, bool openCard)
         : m_suits(mast), m_ranks(znac), m_openCard(openCard) {}
     void Flip() { m_openCard = !m_openCard; }
-    int GetValue()
+    int GetValue() const
     {
-        if (m_ranks > 10)
+        int value = 0;
+        if(m_openCard)
         {
-            return 10;
+            value = m_ranks;
+            if (value > 10)
+            {
+                value = 10;
+            }
         }
-        else
-            return m_ranks;
+        return value;
     }
     friend ostream& operator<<(ostream& os, const Card& aCard);
 };
 
 class Hand
 {
-
+protected:
+    vector<Card*> m_Cards;
 public:
-    vector<Card*> cardInHand;
+    Hand()
+    {
+        m_Cards.reserve(7);
+    }
     void Add(Card* newCart)
     {
-        cardInHand.push_back(newCart);
+        m_Cards.push_back(newCart);
     }
     void Clear()
     {
-        vector<Card*>::iterator it = cardInHand.begin();
-        for (it = cardInHand.begin(); it != cardInHand.end(); it++)
+        vector<Card*>::iterator it = m_Cards.begin();
+        for (it = m_Cards.begin(); it != m_Cards.end(); it++)
         {
             delete* it;
             *it = 0;
         }
-        cardInHand.clear();
+        m_Cards.clear();
     }
     int GetValue()const
     {
+        if (m_Cards.empty())
+            return 0;
+        if (m_Cards[0]->GetValue() == 0)
+            return 0;
         
-        int value = 0;
-        for (int i = 0; i < cardInHand.size(); ++i)
+        int total = 0;
+        
+        for (int i =0; i<m_Cards.size(); i++)
         {
-            value += cardInHand[i]->GetValue();
-
+            total += m_Cards[i]->GetValue();
         }
-        if (value <= 11)
+        bool containsAce = false;
+        for (int i = 0; i < m_Cards.size(); i++)
         {
-            for (int i = 0; i < cardInHand.size(); ++i)
-            {
-                if (cardInHand[i]->GetValue() == 1 && value <= 11)
-                {
-                    value += 10;
-                }
-            }
+            if(m_Cards[i]->GetValue()==Ace)
+                containsAce = true;
         }
-        return value;
+        if (containsAce && total <= 11)
+        {
+            total += 10;
+        }
+        return total;
     }
     virtual ~Hand()
     {
@@ -100,58 +113,41 @@ public:
 
 class GenericPlayer : public Hand
 {
+    friend ostream& operator<<(ostream& os, const GenericPlayer& player);
+protected:
     string m_name;
 public:
     GenericPlayer(const string& name = " ") :Hand(), m_name(name)
     {
     }
-    friend ostream& operator<<(ostream& os, const GenericPlayer& player);
     string GetName() const
     {
         return m_name;
     }
     virtual ~GenericPlayer() {}
-    virtual bool isHitting() const = 0
-    {
-
-    }
-    bool isBoosted()
-    {
-        return (GetValue() > 21);
-    }
-    void Bust()
+    virtual bool isHitting() const = 0 {}
+    bool isBoosted() const {return (GetValue() > 21);}
+    void Bust() const
     {
         cout << m_name << ": " << "Bust" << endl;
     }
 };
+
+
+
 class Player : public GenericPlayer
 {
-    Hand m_hand;
 public:
     Player(const string& name = "Player") : GenericPlayer(name)
     {}
-    virtual bool isHitting() const override
+    virtual ~Player(){}
+    virtual bool isHitting() const 
     {
-        int i = 0;
-        cout << "Do you need a card? 1-no\\2-yes" << endl;
-        cin >> i;
-        if ((i != 1) & (i != 2))
-        {
-            while (true)
-            {
-                cout << "Enter again !\n";
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cin.sync();
-                cout << "Do you need a card? y\\n" << endl;
-                cin >> i;
-                if (i == 1 || i == 2)
-                {
-                    break;
-                }
-            }
-        }
-        return i == 1 ? false : true;
+        cout << GetName() << " Do you want a hit? (1-y/0-n):";
+        int response;
+        cin >> response;
+        return (response == 1);
+        
     }
     void Win() const
     {
@@ -171,18 +167,18 @@ class House : public GenericPlayer
 {
 public:
      
-    House() :GenericPlayer("Diller")
+    House(const string& name = "Diller") :GenericPlayer("Diller")
     {
     }
-    virtual bool IsHitting()
+    virtual bool isHitting() const
     {
         return (GetValue() <= 16);
     }
     void FlipFirstCard()
     {
-        if (!cardInHand.empty())
+        if (!(m_Cards.empty()))
         {
-            cardInHand[0]->Flip();
+            m_Cards[0]->Flip();
         }
         else
         {
@@ -192,7 +188,7 @@ public:
 };
 ostream& operator<<(ostream& os, const Card& aCard)
 {
-    const string RANKS[] = { "A", "2", "3", "4", "5", "6", "7", "8", "9","10", "J", "Q", "K" };
+    const string RANKS[] = {"0", "A", "2", "3", "4", "5", "6", "7", "8", "9","10", "J", "Q", "K" };
     const string SUITS[] = { "s","h", "c", "d" };
 
     if (aCard.m_openCard)
@@ -209,16 +205,193 @@ ostream& operator<<(ostream& os, const Card& aCard)
 ostream& operator<<(ostream& os, const GenericPlayer& player) 
 {
     os << player.GetName() << ": ";
-    for (int i = 0; i < player.cardInHand.size(); ++i)
+    vector<Card*>::const_iterator pCard;
+    if (!player.m_Cards.empty())
     {
-        os << player.cardInHand[i] << " ";
+        for (pCard = player.m_Cards.begin(); pCard   != player.m_Cards.end(); ++pCard)
+        {
+            os << *(*pCard) << "\t";
+
+        }if (player.GetValue() != 0)
+        {
+            cout << "(" << player.GetValue() << ")";
+        }
+        else
+        {
+            os << "empty";
+        }
+        return os;
     }
-        
-    os << "Score = " << player.GetValue() <<  endl;
-    return os;
+
 }
+class Deck : public Hand
+{
+public:
+    Deck()
+    {
+        m_Cards.reserve(52);
+        Populate();
+    }
+    ~Deck(){}
+    void Populate()
+    {
+        Clear();
+        for (int i = Spades; i <= Diamonds; i++)
+        {
+            for (int j = Ace; j < King; j++) 
+            {
+                Add(new Card(Suits(i), Ranks(j), true));
+            }
+            
+        }
+    }
+    void Shuffle()
+    {
+        random_shuffle(m_Cards.begin(), m_Cards.end());
+    }
+    void Deal(Hand& aHand)
+    {
+        if (!m_Cards.empty())
+        {
+            aHand.Add(m_Cards.back());
+            m_Cards.pop_back();
+        }
+        else
+        {
+            cout << "Out of card";
+        }
+    }
+    void AddltionalCards(GenericPlayer& aGenerlcPlayer)
+    {
+        cout << endl;
+        while (!(aGenerlcPlayer.isBoosted()) && aGenerlcPlayer.isHitting() )
+        {
+            Deal(aGenerlcPlayer);
+            cout << aGenerlcPlayer << endl;
+            if (aGenerlcPlayer.isBoosted())
+            {
+                aGenerlcPlayer.Bust();
+            }
+        }
+    }
+    
+private:
+    
+};
+class Game
+{
+private:
+    Deck m_deck;
+    House m_house;
+    vector<Player> m_player;
+    
+public:
+    Game(const vector<string>& names)
+    {
+        vector<string> ::const_iterator pNames;
+        for (pNames=names.begin();pNames!=names.end();++pNames)
+        {
+            
+            m_player.push_back(Player(*pNames));
+
+        }
+        m_deck.Populate();
+        m_deck.Shuffle();
+
+    }
+    void Play()
+    {
+        vector<Player>::iterator pPlayer;
+        for (int i = 0; i < 2; ++i)
+        {
+            for (pPlayer = m_player.begin(); pPlayer != m_player.end(); ++pPlayer)
+            {
+                m_deck.Deal(*pPlayer);
+            }
+            m_deck.Deal(m_house);
+        }
+        m_house.FlipFirstCard();
+        for (pPlayer = m_player.begin(); pPlayer != m_player.end(); ++pPlayer) 
+        {
+                cout << *pPlayer << endl;
+        }
+        cout << m_house << endl;
+        for (pPlayer = m_player.begin(); pPlayer != m_player.end(); ++pPlayer)
+        {
+            m_deck.AddltionalCards(*pPlayer);
+        }
+        m_house.FlipFirstCard();
+        cout << endl << m_house;
+
+        m_deck.AddltionalCards(m_house);
+        if (m_house.isBoosted())
+        {
+            for (pPlayer = m_player.begin(); pPlayer != m_player.end(); ++pPlayer)
+            {
+                if (!(pPlayer->isBoosted()))
+                    pPlayer->Win();
+            }
+        }
+        else 
+        {
+
+      
+            for (pPlayer = m_player.begin(); pPlayer != m_player.end(); ++pPlayer)
+            {
+                if (!(pPlayer->isBoosted()))
+                {
+                    if (pPlayer->GetValue() > m_house.GetValue()) 
+                    {
+                        
+                            pPlayer->Win();
+                    }
+                    else if (pPlayer->GetValue() < m_house.GetValue())
+                    {
+                        pPlayer->Lose();
+                    }
+                    else
+                    {
+                        pPlayer->Push();
+                    }
+                }
+            }
+        }
+        for (pPlayer = m_player.begin() ; pPlayer != m_player.end() ; ++pPlayer)
+        {
+            pPlayer->Clear();
+        }
+        m_house.Clear();
+
+    }
+    
+};
 int main()
 {
+    cout << "\t\tWelcome to Blackjack!\n\n";
+    int numPlayers = 0;
+    while (numPlayers < 1 || numPlayers > 7)
+    {
+        cout << "How many players? (1 - 7): ";
+        cin >> numPlayers;
+    }
+    vector<string> names;
+    string name;
+    for (int i = 0; i < numPlayers; ++i)
+    {
+        cout << "Enter player name: ";
+        cin >> name;
+        names.push_back(name);
+    }
+    cout << endl;
+    Game aGame(names);
+    char again = 'у';
+    while (again != 'n' && again != 'N') 
+    {
+        aGame.Play();
+        cout << "\nDo you want to play again? (Y/N): ";
+        cin >> again;
+    }
+    return 0;
    
 
     return 0;
